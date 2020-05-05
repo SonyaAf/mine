@@ -26,8 +26,8 @@ DS_Treino <- DS_Treino %>%
 filter(!Category %in% c("OTHER OFFENSES","LARCENY/THEFT","DRUG/NARCOTIC"))
 
 
-#droping non necessary variables
-#Droped in DS_Treino variables Descript and Resolution once they weren t in DS_Teste. 
+#dropping non necessary variables
+#Dropped in DS_Treino variables Descript and Resolution once they weren t in DS_Teste. 
 #DS_Treino$Descript <- NULL
 #DS_Treino$Resolution <- NULL
 
