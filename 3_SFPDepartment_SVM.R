@@ -1,6 +1,5 @@
-################
-#  SVM        #
-################
+################################### SUPPORT VECTOR MACHINES ##########################################
+
 library(lubridate)
 library(dplyr)
 library (class)
@@ -9,10 +8,10 @@ library(e1071)
 
 
 ############## Business Understanding ################################# 
-### !!!!!!!! Objectivo: Queremos usar o KNN para predizer o categorias de crime para o ano de 2014.
 
 
-DS_Treino <- read.csv("train.txt",stringsAsFactors = FALSE)   # DataSet Treino
+#data train
+DS_Treino <- read.csv("train.txt",stringsAsFactors = FALSE)  
 DS_Treino <- DS_Treino %>%filter(Category %in% c("OTHER OFFENSES","LARCENY/THEFT","DRUG/NARCOTIC","ASSAULT","NON-CRIMINAL"))
 
 Category <- DS_Treino$Category
@@ -24,7 +23,7 @@ Y        <- as.numeric(DS_Treino$Y)
 #X <- (DS_Treino$X-mean(DS_Treino$X))/sd(DS_Treino$X)
 #Y <- (DS_Treino$Y-mean(DS_Treino$Y))/sd(DS_Treino$Y)
 
-#Split do dataset
+#Split dataset
 percentagem = 0.05
 total = nrow(DS_Treino)
 
@@ -55,7 +54,7 @@ plot(svmfit , data=df_treino, x.Hour~x.Dayofweek)
 plot(svmfit , data=df_treino, x.X~x.Y)
 plot(svmfit , data=df_treino, x.District~x.Hour)
 
-svmfit$index# vector de suporte
+svmfit$index# support vector
 summary (svmfit)
 names(df_treino)
 # test with train data
