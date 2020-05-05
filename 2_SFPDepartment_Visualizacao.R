@@ -1,9 +1,3 @@
-#####################################################
-# Trabalho de ECDE
-#                 Cláudio Rocha
-#                 Marisa Nascimento
-#                 Sónia Afonso
-#####################################################
 
 #install.packages("ggmap")
 #install.packages('plotly')
@@ -20,17 +14,17 @@ library(sp)
 library(dplyr)
 library(plotly)
 
-#Carregar o DataSet
+#Uploadind dataset
 DS_Treino <- read.csv("train.txt",stringsAsFactors = FALSE)   # DataSet Treino
 View(DS_Treino)
 
-#Acrescentar Novas Váriavies 
+#year
 Ano <- year(as.Date(DS_Treino$Dates))
 
-#Mês por extenso
+#Month
 mes <- month(as.Date(DS_Treino$Dates), label=TRUE)
 
-#Mês por extenso
+#week day
 dia_semana=weekdays(as.Date(DS_Treino$Dates))
 
 #Dia
@@ -39,33 +33,34 @@ dia = as.Date(DS_Treino$Dates," %Y-%m-%d ")
 #Dia
 dia_mes = day(DS_Treino$Dates)
 
-#Hora 
+#Hour 
 hora = str_pad(hour(DS_Treino$Dates), 2, pad = "0")    
 
-#Tipo de Rua
+#Street distinct
 tipo_rua <- substr(DS_Treino$Address, nchar(DS_Treino$Address)-2, nchar(DS_Treino$Address))
 
-#Acrescentar novas váriáveis ao DataSet
+#train dataset
 treino <- mutate(DS_Treino, Ano, mes, dia_mes, dia_semana, dia, hora, tipo_rua) 
 View(unique(treino$tipo_rua))
 
 ####################
-#!!!VISUALIZAÇÃO!!!#
+#VISUALIZATION#
 ####################
 
 ##############################################################################
-# A. Verifique quais são as categorias de crime que ocorrem em maior número. #
+# A. Check which categories of crime occur in the greatest number. #
 ##############################################################################
 
-#Agrupar por Categoria Crime e calcular percentagem
+#Group by Crime Category and calculate percentage
 categorias <- treino %>%  
   group_by(Category) %>% 
   summarise(Crimes = n()) %>% 
   mutate(percentagem=round(Crimes/sum(Crimes)*100, 4)) 
 
+#View categories
 View(categorias)
 
-#Quais são as categorias de crime que ocorrem em maior número
+#What are the categories of crime that occur in the greatest number
 ggplot(categorias, aes(x = reorder(Category, -Crimes), y = Crimes, fill = Crimes, label = Crimes) ) + 
   geom_bar(stat = 'identity') + 
   coord_flip() + 
@@ -75,21 +70,21 @@ ggplot(categorias, aes(x = reorder(Category, -Crimes), y = Crimes, fill = Crimes
   geom_text(size = 3, position = position_dodge(width = 1))
 
 ##########################################################################################################
-#.Questão GR2, GR4, GR6, GR8, GR10:
-#  Em que dias são mais frequentes os crimes relacionados com Rapto (kidnapping)? 
-#  Isole o histograma. Poderá haver alguma relação com relato de pessoas desaparecidas (MissingPerson)?
+#.Questions GR2, GR4, GR6, GR8, GR10:
+#  On what days are kidnapping-related crimes more frequent?
+#  Isolate the histogram. Could there be any relationship with reports of missing persons (MissingPerson)?
 #########################################################################################################
 
-#Agrupar por Categoria Crime e dia semana e calcular percentagem
+#Group by Crime Category and weekday and calculate percentage
 CrimesDiasSemana <- treino %>%  
   group_by(dia_semana,Category) %>% 
   summarise(crimes_semana = n()) %>% 
   mutate(percentagem_semana=round(crimes_semana/sum(crimes_semana)*100, 4)) %>%
-  filter(Category=='KIDNAPPING')#Isolar o Istograma para Rapto (kidnapping)
+  filter(Category=='KIDNAPPING')
 
 View(CrimesDiasSemana)
 
-#Isolar o Istograma para Rapto (kidnapping)
+##Isolate histogram per kidnapping
 
 ggplot(CrimesDiasSemana, aes(x = reorder(dia_semana, -crimes_semana), y = crimes_semana, fill = crimes_semana, label = crimes_semana) ) + 
   geom_bar(stat = 'identity') + 
@@ -100,26 +95,26 @@ ggplot(CrimesDiasSemana, aes(x = reorder(dia_semana, -crimes_semana), y = crimes
   geom_text(size = 3, position = position_dodge(width = 1))
 
 ##########################################################################################################
-# Poderá haver alguma relação com relato de pessoas desaparecidas (MissingPerson)?
+# Could there be any relationship with reports of missing persons (MissingPerson)?
 #########################################################################################################
-####Por dia Semana
+####Per week day
 CrimesDiasSemana <- treino %>%  
   group_by(dia_semana, Category) %>% 
   summarise(crimes_semana = n()) %>% 
   mutate(percentagem_semana=round(crimes_semana/sum(crimes_semana)*100, 4)) %>%
   filter(Category %in% c("MISSING PERSON", "KIDNAPPING"))
 View(CrimesDiasSemana)
-#Gráfico de Barras
+# Histogram
 ggplot(CrimesDiasSemana, aes(dia_semana, crimes_semana)) +   
   geom_bar(aes(fill = Category), position = "dodge", stat="identity")+
   labs(x = '', y = 'Crimes', title = 'MISSING PERSON vs KIDNAPPING por dia semana')  
-#Densidade
+#Density
 ggplot(CrimesDiasSemana, aes(crimes_semana, colour = Category)) +
   geom_density() +
   xlim(289, 4663)
 
 
-#Correlação
+#Correlation
 Correlacao <- CrimesDiasSemana %>% mutate(KIDNAPPING=as.numeric(ifelse(Category=="KIDNAPPING",crimes_semana,0)),MISSINGPERSON=as.numeric(ifelse(Category=="MISSING PERSON",crimes_semana,0))) %>% 
   select(dia_semana,KIDNAPPING,MISSINGPERSON)%>%group_by(dia_semana)%>%summarise(KIDNAPPING = sum(KIDNAPPING), MISSINGPERSON = sum(MISSINGPERSON)) 
 View(Correlacao)
@@ -128,7 +123,7 @@ cor(Correlacao[2:3])
 pairs.panels(Correlacao[2:3])
 
 
-####Por ano
+####Per year
 
 CrimesAno <- treino %>%  
   group_by(Ano, Category) %>% 
@@ -137,17 +132,17 @@ CrimesAno <- treino %>%
   filter(Category %in% c("MISSING PERSON", "KIDNAPPING"))
 
 View(CrimesAno)
-#Gráfico de Barras
+#Histogram
 ggplot(CrimesAno, aes(Ano, crimes_ano)) +   
   geom_bar(aes(fill = Category), position = "dodge", stat="identity")+
   labs(x = '', y = 'Crimes por ano', title = 'MISSING PERSON vs KIDNAPPING Ano')  
-#Densidade
+#Density
 ggplot(CrimesAno, aes(crimes_ano, colour = Category)) +
   geom_density() +
   xlim(80, 2400)
 
 
-#Correlação
+#Correlation
 Correlacao <- CrimesAno %>% mutate(KIDNAPPING=as.numeric(ifelse(Category=="KIDNAPPING",crimes_ano,0)),MISSINGPERSON=as.numeric(ifelse(Category=="MISSING PERSON",crimes_ano,0))) %>% 
   select(Ano,KIDNAPPING,MISSINGPERSON)%>%group_by(Ano)%>%summarise(KIDNAPPING = sum(KIDNAPPING), MISSINGPERSON = sum(MISSINGPERSON)) 
 View(Correlacao)
@@ -155,7 +150,7 @@ View(Correlacao)
 cor(Correlacao[2:3])
 pairs.panels(Correlacao[2:3])
 
-##Por dia
+##Per day
 CrimesDia <- treino %>%  
   group_by(dia, Category) %>% 
   summarise(crimes_dia = n()) %>% 
@@ -163,17 +158,17 @@ CrimesDia <- treino %>%
   filter(Category %in% c("MISSING PERSON", "KIDNAPPING"))
 
 View(CrimesDia)
-#Gráfico de Barras
+#Histogram
 ggplot(CrimesDia, aes(dia, crimes_dia)) +   
   geom_bar(aes(fill = Category), position = "dodge", stat="identity")+
   labs(x = '', y = 'Crimes por ano', title = 'MISSING PERSON vs KIDNAPPING Ano')  
-#Densidade
+#Density
 ggplot(CrimesDia, aes(crimes_dia, colour = Category)) +
   geom_density() +
   xlim(1, 43)
 
 
-#Correlação
+#Correlation
 Correlacao <- CrimesDia %>% mutate(KIDNAPPING=as.numeric(ifelse(Category=="KIDNAPPING",crimes_dia,0)),MISSINGPERSON=as.numeric(ifelse(Category=="MISSING PERSON",crimes_dia,0))) %>% 
   select(dia,KIDNAPPING,MISSINGPERSON)%>%group_by(dia)%>%summarise(KIDNAPPING = sum(KIDNAPPING), MISSINGPERSON = sum(MISSINGPERSON)) 
 View(Correlacao)
@@ -182,12 +177,12 @@ cor(Correlacao[2:3])
 pairs.panels(Correlacao[2:3])
 
 ##########################################################################################################
-#.Questão GR1-10:Em que dias são mais frequentes os crimes relacionados com roubo de veículos (VehicleTheft)? 
-# Isole o histograma. 
-# Poderá haver relação com roubos em geral (Robbery?)
+#.QuestÃ£o GR1-10:On which days are the most frequent crimes related to vehicle theft? 
+# Histogram isolation. 
+# Could it be related to robberies in general (Robbery?)
 ##########################################################################################################
 
-#Agrupar por Categoria Crime e dia semana e calcular percentagem
+#Group by Crime Category and weekday and calculate percentage
 CrimesDiasSemana <- treino %>%  
   group_by(dia_semana,Category) %>% 
   summarise(crimes_semana = n()) %>% 
@@ -196,7 +191,7 @@ CrimesDiasSemana <- treino %>%
 
 View(CrimesDiasSemana)
 
-#Isolar o Istograma para Rapto (kidnapping)
+#Isolate the Kidnapping histogram
 
 ggplot(CrimesDiasSemana, aes(x = reorder(dia_semana, -crimes_semana), y = crimes_semana, fill = crimes_semana, label = crimes_semana) ) + 
   geom_bar(stat = 'identity') + 
@@ -223,16 +218,16 @@ ggplot(CrimesDiasMes, aes(x = dia_mes, y = crimes_dia_mes ) ) +
 
 
 ###########################
-##Questão GR1-10
+##Question GR1-10
 ###########################
-#Agrupar por Categoria Crime e dia semana e calcular percentagem
+#Group by Crime Category and weekday and calculate percentage
 CrimesDiasSemana <- treino %>%  
   group_by(dia_semana,Category) %>%
   summarise(crimes_semana = n()) %>%
   mutate(percentagem_semana=round(crimes_semana/sum(crimes_semana)*100, 4)) %>%
   filter(Category=='VEHICLE THEFT')
 
-#Isolar o Istograma 
+#Isolate histograma 
 ggplot(CrimesDiasSemana, aes(x = reorder(dia_semana, -crimes_semana), y = crimes_semana, fill = crimes_semana, label = crimes_semana) ) +
   geom_bar(stat = 'identity') +
   coord_flip() +
@@ -241,7 +236,7 @@ ggplot(CrimesDiasSemana, aes(x = reorder(dia_semana, -crimes_semana), y = crimes
   theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5))+
   geom_text(size = 3, position = position_dodge(width = 1))
 
-##Por Zona
+##Per zone
 treino %>%filter(.,Category %in% c("VEHICLE THEFT", "ROBBERY"))%>%  
   group_by(PdDistrict, Category) %>%
   #summarise(crimes = n()) %>%
@@ -254,8 +249,8 @@ treino %>%filter(.,Category %in% c("VEHICLE THEFT", "ROBBERY"))%>%
   geom_point()
 
 
-##Por semana
-treino$dia_semana <- factor(treino$dia_semana, levels = c("segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira", "sábado","domingo"))
+##Per week
+treino$dia_semana <- factor(treino$dia_semana, levels = c("segunda-feira","terÃ§a-feira","quarta-feira","quinta-feira","sexta-feira", "sÃ¡bado","domingo"))
 treino %>%filter(.,Category %in% c("VEHICLE THEFT", "ROBBERY"))%>%  
   group_by(dia_semana, Category) %>%
   #summarise(crimes = n()) %>%
@@ -267,7 +262,7 @@ treino %>%filter(.,Category %in% c("VEHICLE THEFT", "ROBBERY"))%>%
   scale_y_continuous(name = "Registos")+
   geom_point()
 
-##Por ano
+##Per year
 treino %>%filter(.,Category %in% c("VEHICLE THEFT", "ROBBERY"))%>%  
   group_by(Ano, Category) %>%
   #summarise(crimes = n()) %>%
@@ -280,26 +275,26 @@ treino %>%filter(.,Category %in% c("VEHICLE THEFT", "ROBBERY"))%>%
   geom_point()
 
 ##########################################################################################################
-# Poderá haver relação com roubos em geral (Robbery?)
+# Could it be related to robberies in general (Robbery?)
 ##########################################################################################################
-#Agrupar por Categoria Crime e dia semana e calcular percentagem
+#Group by Crime Category and weekday and calculate percentage
 CrimesDiasSemana <- treino %>%  
   group_by(dia_semana,Category) %>% 
   summarise(crimes_semana = n()) %>% 
   mutate(percentagem_semana=round(crimes_semana/sum(crimes_semana)*100, 4)) %>%
   filter(Category %in% c("VEHICLE THEFT", "ROBBERY"))
 View(CrimesDiasSemana)
-#Gráfico de Barras
+#Histogram
 ggplot(CrimesDiasSemana, aes(dia_semana, crimes_semana)) +   
   geom_bar(aes(fill = Category), position = "dodge", stat="identity")+
   labs(x = '', y = 'Crimes', title = 'VEHICLE THEFT vs ROBBERY por dia semana')  
-#Densidade
+#Density
 ggplot(CrimesDiasSemana, aes(crimes_semana, colour = Category)) +
   geom_density() +
   xlim(3194, 8613)
 
 
-#Correlação
+#Correlation
 Correlacao <- CrimesDiasSemana %>% mutate(VEHICLETHEFT=as.numeric(ifelse(Category=="VEHICLE THEFT",crimes_semana,0)),ROBBERY=as.numeric(ifelse(Category=="ROBBERY",crimes_semana,0))) %>% 
   select(dia_semana,VEHICLETHEFT,ROBBERY)%>%group_by(dia_semana)%>%summarise(VEHICLETHEFT = sum(VEHICLETHEFT), ROBBERY = sum(ROBBERY)) 
 View(Correlacao)
@@ -308,7 +303,7 @@ cor(Correlacao[2:3])
 pairs.panels(Correlacao[2:3])
 
 
-####Por ano
+####Per year
 
 CrimesAno <- treino %>%  
   group_by(Ano, Category) %>% 
@@ -317,17 +312,17 @@ CrimesAno <- treino %>%
   filter(Category %in% c("VEHICLE THEFT", "ROBBERY"))
 
 View(CrimesAno)
-#Gráfico de Barras
+#Histogram
 ggplot(CrimesAno, aes(Ano, crimes_ano)) +   
   geom_bar(aes(fill = Category), position = "dodge", stat="identity")+
   labs(x = '', y = 'Crimes por ano', title = 'MISSING PERSON vs KIDNAPPING Ano')  
-#Densidade
+#Density
 ggplot(CrimesAno, aes(crimes_ano, colour = Category)) +
   geom_density() +
   xlim(80, 2400)
 
 
-#Correlação
+#Correlation
 Correlacao <- CrimesAno %>% mutate(VEHICLETHEFT=as.numeric(ifelse(Category=="VEHICLE THEFT",crimes_ano,0)),ROBBERY=as.numeric(ifelse(Category=="ROBBERY",crimes_ano,0))) %>% 
   select(Ano,VEHICLETHEFT,ROBBERY)%>%group_by(Ano)%>%summarise(VEHICLETHEFT = sum(VEHICLETHEFT), ROBBERY = sum(ROBBERY)) 
 View(Correlacao)
@@ -335,7 +330,7 @@ View(Correlacao)
 cor(Correlacao[2:3])
 pairs.panels(Correlacao[2:3])
 
-##Por dia
+##Per day
 CrimesDia <- treino %>%  
   group_by(dia, Category) %>% 
   summarise(crimes_dia = n()) %>% 
@@ -343,17 +338,17 @@ CrimesDia <- treino %>%
   filter(Category %in% c("VEHICLE THEFT", "ROBBERY"))
 
 View(CrimesDia)
-#Gráfico de Barras
+#Histogram
 ggplot(CrimesDia, aes(dia, crimes_dia)) +   
   geom_bar(aes(fill = Category), position = "dodge", stat="identity")+
   labs(x = '', y = 'Crimes por ano', title = 'VEHICLE THEFT vs ROBBERY Ano')  
-#Densidade
+#Density
 ggplot(CrimesDia, aes(crimes_dia, colour = Category)) +
   geom_density() +
   xlim(1, 43)
 
 
-#Correlação
+#Correlation
 Correlacao <- CrimesDia %>% mutate(VEHICLETHEFT=as.numeric(ifelse(Category=="VEHICLE THEFT",crimes_dia,0)),ROBBERY=as.numeric(ifelse(Category=="ROBBERY",crimes_dia,0))) %>% 
   select(dia,VEHICLETHEFT,ROBBERY)%>%group_by(dia)%>%summarise(VEHICLETHEFT = sum(VEHICLETHEFT), ROBBERY = sum(ROBBERY)) 
 View(Correlacao)
@@ -363,7 +358,7 @@ pairs.panels(Correlacao[2:3])
 
 
 ##########################################################################################################
-# B.Qual é a categoria de crime que ocorre com maior frequência?
+# B.What is the most frequent category of crime?
 ##########################################################################################################
 
 
@@ -375,7 +370,7 @@ View(CrimesDia)
 ggplot(CrimesDia, aes(x = reorder(Category, -media), y = media, fill = media, label = media) ) + 
   geom_bar(aes(fill = media), position = "dodge", stat="identity")+
   coord_flip() + 
-  labs(x = '', y = 'Média por dia', title = 'Media Crimes por dia') +
+  labs(x = '', y = 'MÃ©dia por dia', title = 'Media Crimes por dia') +
   geom_text(size = 3, position = position_dodge(width = 1))
 
 ggplot(CrimesDia, aes(x = reorder(Category, crimes_dia), y = crimes_dia))+
@@ -385,7 +380,7 @@ ggplot(CrimesDia, aes(x = reorder(Category, crimes_dia), y = crimes_dia))+
 
 
 ##########################################################################################################
-# C.Olhando para o Mapa quais as categorias se encontram mais dispersas geograficamente?Poderá esta informação estar relacionada com a resposta à alínea A?
+# C.Looking at the Map, which categories are more geographically dispersed? Could this information be related to the answer to point A?
 ########################################################################################################
 
 categoriasDispersas <- treino %>%  
@@ -412,7 +407,7 @@ categoriasDispersas <- treino %>%
   #filter(Category %in% c("OTHER OFFENSES","LARCENY/THEFT"))
   
 
-#View(categoriasDispersas)
+#View(scattered categories)
 
 #map <- get_map( maptype = "terrain", source = "google", zoom = 13)
 map <- qmap('San Francisco', zoom = 13, maptype = 'terrain')
@@ -438,9 +433,9 @@ map +
 
 
 ##########################################################################################################
-# D.Qual a categoria de crime que se encontra mais concentrada numa determinada zona geográfica?
+# D.Which category of crime is most concentrated in a given geographical area?
 ########################################################################################################
-#Agrupar por Categoria Crime e calcular percentagem
+#Group by Crime Category and calculate percentage
 categoriasArea <- treino %>%  
   group_by(PdDistrict, Category) %>% 
   summarise(Crimes = n()) 
@@ -448,15 +443,15 @@ View(categoriasArea)
 
 plt <- ggplot(categoriasArea, aes(x=reorder(PdDistrict, -Crimes), y=Crimes, fill = Crimes ))+geom_bar(stat = "identity")+
   #coord_flip()+
-  labs(x = '', y = 'Número total de crimes', title = 'Categoria de Crimes por dia Semana')+
+  labs(x = '', y = 'NÃºmero total de crimes', title = 'Categoria de Crimes por dia Semana')+
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
 plt + facet_wrap(~ Category, scales = "free_y")  
 
 
 ##########################################################################################################
-#E.A categoria mais frequente representa que percentagem, no total de crimes de São Francisco?
+#E.The most frequent category represents what percentage, in the total of San Francisco crimes?
 ##########################################################################################################
-#Agrupar por Categoria Crime e calcular percentagem
+#Group by Crime Category and calculate percentage
 categorias <- treino %>%  
   group_by(Category) %>% 
   summarise(Crimes = n()) %>% 
@@ -464,7 +459,7 @@ categorias <- treino %>%
 
 View(categorias)
 
-#Quais são as categorias de crime que ocorrem em maior número
+#What are the categories of crime that occur in the greatest number
 ggplot(categorias, aes(x = reorder(Category, -percentagem), y = percentagem, fill = percentagem, label = percentagem) ) + 
   geom_bar(stat = 'identity') + 
   coord_flip() + 
@@ -474,16 +469,16 @@ ggplot(categorias, aes(x = reorder(Category, -percentagem), y = percentagem, fil
   geom_text(size = 3, position = position_dodge(width = 1))
 
 ##########################################################################################################
-#F. Análise os dados em termos de Densidade. 
-# Que informação poderá retirar dessa análise em relação às categorias e sua forma/relevância para o Dataset?
+#F. Analyze the data in terms of density.
+# What information can you draw from this analysis in relation to the categories and their form / relevance to the Dataset?
 ##########################################################################################################
 
-##Por dia
+##Per day
 CrimesDia <- treino %>%  
   group_by(dia, Category) %>% 
   summarise(crimes_dia = n()) 
 #View(CrimesDia)
-#Densidade
+#Density
 
 ggplot(CrimesDia, aes(crimes_dia)) +
   geom_density() +
@@ -491,8 +486,8 @@ ggplot(CrimesDia, aes(crimes_dia)) +
   facet_wrap(~ Category, scales = "free_y") 
 
 ##########################################################################################################
-#Questão GR2,GR4,GR6,GR8,GR10:No respeitante aos crimes de invasão de propriedade privada(Trespass) 
-#há alguma característica interessante que se destaque?Justifique e conclua.
+#QuestÃ£o GR2,GR4,GR6,GR8,GR10: Regarding crimes of invasion of private property (Trespass) 
+#Are there any interesting features that stand out? Justify and conclude.
 ##########################################################################################################
 categoriasTrespass <- treino %>%  
   group_by(Category, hora) %>%
@@ -549,8 +544,8 @@ ggplot(categoriasTrespass, aes(x = dia_semana, y = Crimes ) ) +
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))+
   geom_bar(stat = 'identity')
 ##########################################################################################################
-#.Questão GR1-10:No respeitante aos crimes de Mandatos de Captura(Warrants) 
-# há alguma característica interessante que se destaque?Justifique e conclua.
+#.QuestÃ£o GR1-10:Regarding the crimes of Warrants
+# Are there any interesting features that stand out? Justify
 ##########################################################################################################
 
 categoriasTrespass <- treino %>%  
@@ -588,16 +583,15 @@ ggplot(categoriasTrespass, aes(x = reorder(dia_semana, -Crimes), y = Crimes ) ) 
 
 View(categoriasTrespass)
 ##########################################################################################################
-#H.#Haverá alguma relação entre as categorias e os locais físicos onde mais se densificam? 
-#  #Tome, como exemplo (não único) a categoria "Conduta Desordeira"
-#ver 
+#H.#Is there a relationship between the categories and the physical places where they densify the most?
+#  #Take, as an example (not unique) the category "Disorderly Conduct"
 ##########################################################################################################
 categoriasArea <- treino %>%  
   group_by(Category, PdDistrict) %>% 
   summarise(Crimes = n(), x=mean(X), y=mean(Y)) 
 View(categoriasArea)
 
-#Relação Categoria Area
+#Area Category Relationship
 categoriasArea <- categoriasArea %>% mutate(densifica=as.numeric(ifelse(Crimes==max(Crimes),Crimes,0))) %>% 
   filter(densifica!=0)%>%
   select(PdDistrict,Category,Crimes,x,y)
@@ -606,7 +600,7 @@ View(categoriasArea)
 
 plt <- ggplot(categoriasArea, aes(x=reorder(Category, -Crimes), y=Crimes, fill = Crimes ))+geom_bar(stat = "identity")+
   #coord_flip()+
-  labs(x = '', y = 'Número total de crimes', title = 'categorias e os locais físicos onde mais se densificam')+
+  labs(x = '', y = 'NÃºmero total de crimes', title = 'categorias e os locais fÃ­sicos onde mais se densificam')+
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
 plt + facet_wrap(~ PdDistrict, scales = "free" )
 
@@ -630,9 +624,9 @@ map +
 
 
 ##########################################################################################################
-#I.Analise os TOP3 crimes e a sua localização geográfica. 
-#Haverá alguma correlação entre estes crimes? E se o TOP3 for TOP5 ? 
-#Que alterações verifica?
+#I.Analyze the TOP3 crimes and their geographic location.
+# Will there be any correlation between these crimes? What if TOP3 is TOP5?
+#What changes do you check?
 ##########################################################################################################
 TOPcategorias <- treino %>%  
   group_by(Category) %>% 
@@ -659,15 +653,15 @@ p + geom_point(aes(x = x, y = x,  colour = Category), data = TOPcategorias, size
   theme(legend.position="bottom")
 
 
-#Correlação
-##Por dia
+#Correlation
+##Per day
 Top5CrimesDia <- treino %>%  
   group_by(dia, Category) %>% 
   summarise(crimes_dia = n()) %>% 
   filter(Category %in% c("ASSAULT", "DRUG/NARCOTIC", "LARCENY/THEFT", "NON-CRIMINAL","OTHER OFFENSES"))
 
 
-#Correlação
+#Correlation
 CorrelacaoTop5 <- Top5CrimesDia %>% mutate(
   ASSAULT=as.numeric(ifelse(Category=="ASSAULT",crimes_dia,0)),
   DRUGNARCOTIC=as.numeric(ifelse(Category=="DRUG/NARCOTIC",crimes_dia,0)), 
@@ -686,7 +680,7 @@ cor(CorrelacaoTop5[2:6])
 pairs.panels(CorrelacaoTop5[2:6])
 
 ##########################################################################################################
-#K.Existe alguma hora do dia em que a taxa de crimes seja menor? @SA
+#K.Is there a time of day when the crime rate is lower?
 ##########################################################################################################
 categorias_hora <- treino %>%  
   group_by(Category, hora) %>%
@@ -703,9 +697,9 @@ ggplot(categorias_hora, aes(x = hora, y = Crimes ) ) +
 
 
 ##########################################################################################################
-#L.Se se quiser analisar as zonas em que a categoria Prostituição é mais prevalente:
-#.Questão GR2, GR4, GR6, GR8, GR10:Que tipo de ruas se encontram nessas zonas? Caracterize essas ruas, 
-#relacionando-as com a categoria em causa.@CR
+#L.If you want to analyze the areas where the category Prostitution is more prevalent:
+# .Question GR2, GR4, GR6, GR8, GR10: What kind of streets are found in these areas? Characterize these streets,
+# relating them to the category in question.
 ##########################################################################################################
 View(treino)
 
@@ -716,7 +710,7 @@ categoriasArea <- treino %>%
 
 ggplot(categoriasArea, aes(x = reorder(PdDistrict, total), y = total ) ) + 
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))+
-  labs(x = '', y = '# Prostituição', title = 'Prostituição por distrito')+
+  labs(x = '', y = '# ProstituiÃ§Ã£o', title = 'ProstituiÃ§Ã£o por distrito')+
   geom_bar(stat = 'identity')
 
 
@@ -741,8 +735,8 @@ map +
 View(unique(treino$Address))
 
 ##########################################################################################################
-#.Questão GR1-10: As ruas mais prevalentes são ruas principais ou secundárias? 
-#Haverá alguma relação com a categoria em causa?
+#.Question GR1-10: Are the most prevalent streets main or secondary streets?
+# Will there be any relationship with the category in question?
 ##########################################################################################################
 
 categoriasArea <- treino %>%  
@@ -752,7 +746,7 @@ categoriasArea <- treino %>%
 
 p4 <- ggplot() + 
   geom_bar(aes(y = total, x = reorder(tipo_rua, total), fill = PdDistrict), data = categoriasArea,stat="identity")+
-  labs(x = '', y = '# Total', title = 'Prostituição por Tipo Rua e Zona')
+  labs(x = '', y = '# Total', title = 'ProstituiÃ§Ã£o por Tipo Rua e Zona')
 p4
 
 
@@ -768,8 +762,9 @@ ggplot(CrimesDia, aes(x = reorder(dia, crimes_dia), y = crimes_dia))+
 
 
 
-#######################
-### G.Haverá alguma relação entre os crimes de NarcoTráfico (Drug/Narcotic) e Prostituição (Prostitution)?
+###################################################################################################
+### G.Will there be any relationship between the crimes of Drug / Narcotic and Prostitution?
+###################################################################################################
 
 CrimesDP <- treino %>%  
   group_by(dia_semana, Category) %>%
@@ -786,7 +781,7 @@ CorrelacaoDP <- CrimesDP %>% mutate(DRUGNARCOTIC= as.numeric(ifelse(Category =="
 pairs.panels(CorrelacaoDP[2:3])
 
 
-#Correlação por dia da semana
+#Correlation per day of week
 CrimesDP <- treino %>%  
   group_by(dia_semana, Category) %>%
   summarise(crimes_semana = n()) %>%
@@ -816,7 +811,7 @@ treino %>%filter(.,Category %in% c("DRUG/NARCOTIC", "PROSTITUTION"))%>%
 
 
 
-treino$dia_semana <- factor(treino$dia_semana, levels = c("segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira", "sábado","domingo"))
+treino$dia_semana <- factor(treino$dia_semana, levels = c("segunda-feira","terÃ§a-feira","quarta-feira","quinta-feira","sexta-feira", "sÃ¡bado","domingo"))
 treino %>%filter(.,Category %in% c("DRUG/NARCOTIC", "PROSTITUTION"))%>%  
   group_by(dia_semana, Category) %>%
   #summarise(crimes = n()) %>%
