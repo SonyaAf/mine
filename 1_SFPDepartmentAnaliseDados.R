@@ -1,6 +1,10 @@
-# DATA ANALYSIS/ CLEANING SAN FRANCISCO POLICE DEPARTMENT DATASETS
-
 #####################################################
+# Trabalho de ECDE
+#                 Cláudio Rocha
+#                 Marisa Nascimento
+#                 Sónia Afonso
+#####################################################
+
 
 #install.packages("ggmap")
 #install.packages('plotly')
@@ -29,72 +33,73 @@ View(DS_Teste)
 
 
 #*******************************************************
-#1.    Evaluation and quality of data.
+#1.     Avalie e conclua sobre a qualidade dos dados.
 #*******************************************************
 
 length(DS_Teste)    
 length(DS_Treino)
 
 
-# summary of 2 datasets
+# sumarização dos 2 datasets
 summary(DS_Treino)
 summary(DS_Teste)
 
-# Atribute names
+# verificar se os nomes dos atributos são os mesmos 
 names(DS_Teste)
 names(DS_Treino)
 
-#Existence of nulls
+#verificação da existência de valores nulos nos datasets
 is.null(DS_Teste)
 is.null(DS_Treino)
 
-#Missing data
+#verificação da existência de valores omissos nos datasets
 sum(is.na(DS_Teste))
 sum (is.na(DS_Treino))
 
-#Test dataset analysis
-#Exploratory analysis datasets. testing dataset:  
+#Análise no dataset de teste
+#Optamos por realizar uma análise exploratória macro em cada um dos datasets. Posto isto, aplicamos as seguintes funções para o dataset de teste:  
 
-#Removing Id column for duplicates
-#DS_Teste$Id<-NULL
-names(DS_Teste)  #confirm removed data column
+#Remover a coluna Id para podermos ver se existem duplicados
+#DS_Teste$Id<-NULLnão tendo em consideração a coluna ID
+names(DS_Teste)  #Confirmar a remoção da coluna
 
-#Check duplicates
+#Verificar Duplicados 
 duplicated(DS_Teste[2:7])
 
-#Check duplicates
+#A função anterior devolve valores a true, logo vamos identificar as linhas duplicadas
 Duplicados <- DS_Teste[duplicated(DS_Teste), ]
 View(Duplicados)
 
 nrow(unique(Duplicados))
 nrow(Duplicados)
 
-#count duplicates
+#Contar o número de linhas duplicadas
 nrow(Duplicados)
 
 max(as_date(DS_Teste$Dates))
 min(as_date(DS_Teste$Dates)) 
 
 
-#Exploring train dataset
+#Análise no dataset de treino
+#Para o dataset de treino aplicamos as seguintes funções:  
 
-#checking nulls train dataset
+#verificação de nulos no dataset de Treino
 is.null(DS_Treino)
 
-#Missing data in train dataset
+#verificação de omissos no dataset de Treino
 sum(is.na(DS_Treino))
 
-#Column ID inexistent
+#O dataset de treino não tem a coluna id. pelo que não será necessária à sua remoção
 duplicated(DS_Treino)
 
 Duplicados <- DS_Treino[duplicated(DS_Treino), ]
 nrow(Duplicados)
 
 #############################################################################################
-#2 Application of methodologies regarding the "cleanliness" and consistency of the DataSet##########
+#2 Aplicação de metodologias respeitante à "limpeza" e consistência do DataSet##########
 #############################################################################################
 
-#Add new variables
+#Acrescentar Novas Váriavies
 Ano <- year(as.Date(DS_Treino$Dates))
 mes <- month(as.Date(DS_Treino$Dates), label=TRUE)
 dia_semana=weekdays(as.Date(DS_Treino$Dates))
@@ -114,43 +119,43 @@ hora = str_pad(hour(DS_Teste$Dates), 2, pad = "0")
 teste <- mutate(DS_Teste, Ano, mes, dia_semana, dia, diadomes, hora)
 
 ########################################################################
-#######Missing values ##################################################
+#######3 Verificação de Missing values no dataset#######################
 #########################################################################
 
-# NULL sum test data
+# sumarização dos valores nulos no dataset de teste
 sum(is.na(DS_Teste))
 
-# NULL sum train data
+# sumarização dos valores nulos no dataset de treino
 sum(is.na(DS_Treino))
 
-# Check NULL
+# O dataset não apresenta valores em falta 
 is.null(DS_Treino) 
 is.null(DS_Teste)  
 
 ##########################################################################################
-###4 checking labels/columns#############################################################
+###4 Verificação de Informação, em função das variáveis presentes no DataSet de teste######
 #########################################################################################
 
-# Labels test dataset
+# Labels do dataset de teste
 names(DS_Teste)
 
 
-# Labels train dataset
+# Labels do dataset de treino
 names(DS_Treino)
 
 
 ########################################################################################
-############## Number of crime categories in San Francisco? ############################
+####5.Nº de categorias de crime existente em São Francisco? ############################
 ########################################################################################
 
-# Group by Crime Category, calculate the number of crimes by category and calculate #percentage
+#Agrupar por Categoria Crime, calcular o nº ocorrências de crimes por categoria e calcular #percentagem
 categorias <- treino %>%  
   group_by(Category) %>%
   summarise(Crimes = n()) %>%
   mutate(percentagem=round(Crimes/sum(Crimes)*100, 4))
 
 View(categorias)
-#View the categories of crime that occur in the greatest number
+#Visualizar as categorias de crime que ocorrem em maior número
 ggplot(categorias, aes(x = reorder(Category, -Crimes), y = Crimes, fill = Crimes, label = Crimes) ) +
   geom_bar(stat = 'identity') +
   coord_flip() +
@@ -164,68 +169,68 @@ View(categorias%>%top_n(1,-Crimes))
 
 
 #####################################################################################
-#7 patterns analysis in datasets against date variable ##############################
+#7 Verificação de padrões nos datasets em relação à variável date####################
 #####################################################################################
 
 #DATASET TREINO
-#Group by day, week, month and year
+#Agrupar por dia, semana, mes e ano
 AgregaPorDia <- treino %>% 
   group_by(dia, dia_semana, mes, Ano,diadomes) %>%
   summarise(Crimes = n())
 
-#Histogram By Day of the Week
+#Histograma Por dia da Semana
 
 ggplot(AgregaPorDia, aes(x = dia_semana, y = Crimes) ) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 150000))+
   geom_bar(stat = 'identity')
 
-#Boxplot per weekday
+#Boxplot por dia da semana 
 ggplot(AgregaPorDia, aes(x = dia_semana, y = Crimes))+
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) +geom_boxplot()+
   scale_x_discrete(name = "Dias Semana") +
   scale_y_continuous(name = "Total dia Semana")
 
-##Histogram per month
+##Histograma Por mes
 ggplot(AgregaPorDia, aes(x = mes, y = Crimes) ) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 100000))+
   geom_bar(stat = 'identity')
 
-#Boxplot per month
+#Boxplot por mes
 ggplot(AgregaPorDia, aes(x = mes, y = Crimes))+
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) +geom_boxplot()+
   scale_x_discrete(name = "Meses") +
   scale_y_continuous(name = "Total por mes")
 
-##Histograma per year
+##Histograma Por ano
 ggplot(AgregaPorDia, aes(x = factor(Ano), y = Crimes) ) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 100000))+
   geom_bar(stat = 'identity')
 
-##Boxplot per year
+##Boxplot Por ano
 ggplot(AgregaPorDia, aes(x = factor(Ano), y = Crimes) ) +
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) +geom_boxplot()+
-  scale_x_discrete(name = "Crimes por mÃªs") +
-  scale_y_continuous(name = " NÂº de Crimes")
+  scale_x_discrete(name = "Crimes por mês") +
+  scale_y_continuous(name = " Nº de Crimes")
 
-##Histogram per day month
+##Histograma Por dia do mes   #### WARNING#####
 ggplot(AgregaPorDia, aes(x = diadomes, y = Crimes) ) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 100000))+
   geom_bar(stat = 'identity')
 
 
 
-#DATASET TEST
+#DATASET TESTE
 AgregaPorDiateste <- teste%>% 
   group_by(dia, dia_semana, mes, Ano,diadomes) %>%
   summarise(Crimes = n())
 
-#Histogram By Day of the Week
+#Por dia da Semana
 ggplot(AgregaPorDiateste, aes(x = dia_semana, y = Crimes))+
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) +geom_boxplot()+
   scale_x_discrete(name = "Dias Semana") +
   scale_y_continuous(name = "Total dia Semana")
 
-#Histogram By month
+#Por mes
 ggplot(AgregaPorDiateste, aes(x = mes, y = Crimes))+
   theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) +geom_boxplot()+
   scale_x_discrete(name = "Meses") +
